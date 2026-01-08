@@ -28,7 +28,7 @@ class RestaurantPage extends StatelessWidget {
       'title': i % 2 == 0 ? 'Найзуудад Багц' : 'Хос Пицца - Супер',
       'subtitle': i % 2 == 0 ? 'BBQ / Пеперонити' : 'Хавай / Маханд дурлагсад',
       'price': '${50 + i * 2},000₮',
-      'img': 'https://picsum.photos/seed/pizza$i/400/300'
+      'img': 'assets/images/pizza${i % 3 + 1}.jpg'
     };
   });
 
@@ -110,7 +110,7 @@ class RestaurantPage extends StatelessWidget {
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const CircleAvatar(
             radius: 36,
-            backgroundImage: NetworkImage('https://picsum.photos/seed/logo/200/200'),
+            backgroundImage: NetworkImage('assets/images/pizzahutlogo.png'),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -231,8 +231,11 @@ class RestaurantPage extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            child: Image.network(item['img'],
-                height: 95, width: double.infinity, fit: BoxFit.cover),
+            child: Image.asset(
+              item['img'],
+              height: 95,
+              width: double.infinity,
+              fit: BoxFit.cover),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -273,8 +276,11 @@ class RestaurantPage extends StatelessWidget {
         child: Row(children: [
           ClipRRect(
             borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-            child: Image.network(item['img'],
-                width: 110, height: 90, fit: BoxFit.cover),
+            child: Image.asset(
+              item['img'],
+              width: 110, 
+              height: 90, 
+              fit: BoxFit.cover),
           ),
           Expanded(
             child: Padding(
@@ -327,8 +333,11 @@ class FoodDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(item['title'])),
       body: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Image.network(item['img'],
-            width: double.infinity, height: 220, fit: BoxFit.cover),
+        Image.asset(
+          item['img'],
+          width: double.infinity,
+          height: 220,
+          fit: BoxFit.cover),
         Padding(
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
