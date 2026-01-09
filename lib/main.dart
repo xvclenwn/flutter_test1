@@ -10,9 +10,7 @@ class RestaurantDemoApp extends StatelessWidget {
     return MaterialApp(
       title: 'Restaurant UI Demo',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-      ),
+      theme: ThemeData(primarySwatch: Colors.green),
       home: const RestaurantPage(),
     );
   }
@@ -26,10 +24,8 @@ class RestaurantPage extends StatefulWidget {
 }
 
 class _RestaurantPageState extends State<RestaurantPage> {
-  final ScrollController _menuScrollController = ScrollController();
+  final TextEditingController _bagNameCtrl = TextEditingController();
 
-  // --- CATEGORIES + ITEMS DATA STRUCTURE ---
-  // Add categories or items here. Each item 'img' can be an asset path (assets/...) or a network URL (https://...)
   final List<Map<String, dynamic>> categories = [
     {
       'name': 'Пицца',
@@ -50,14 +46,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
     },
     {
       'name': 'Багц',
-      'items': [
-        {
-          'title': 'Найзуудад Багц',
-          'subtitle': 'BBQ / Пеперони',
-          'price': '75,000₮',
-          'img': 'assets/images/pack1.jpg'
-        },
-      ],
+      'items': [],
     },
     {
       'name': 'Уух зүйлс',
@@ -77,42 +66,15 @@ class _RestaurantPageState extends State<RestaurantPage> {
   List<Map<String, dynamic>> get filteredItems =>
       List<Map<String, dynamic>>.from(categories[selectedCategoryIndex]['items']);
 
-  void _scrollLeft() {
-    final newOffset = (_menuScrollController.offset - 220).clamp(
-      0.0,
-      _menuScrollController.position.hasPixels
-          ? _menuScrollController.position.maxScrollExtent
-          : double.infinity,
-    );
-    _menuScrollController.animateTo(
-      newOffset,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-  }
+  List<Map<String, dynamic>> get pizzas =>
+      List<Map<String, dynamic>>.from(categories.firstWhere((c) => c['name'] == 'Пицца')['items']);
 
-  void _scrollRight() {
-    final max = _menuScrollController.position.hasPixels
-        ? _menuScrollController.position.maxScrollExtent
-        : 1000.0;
-    final newOffset = (_menuScrollController.offset + 220).clamp(
-      0.0,
-      max,
-    );
-    _menuScrollController.animateTo(
-      newOffset,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-  }
+  List<Map<String, dynamic>> get drinks =>
+      List<Map<String, dynamic>>.from(categories.firstWhere((c) => c['name'] == 'Уух зүйлс')['items']);
 
-  @override
-  void dispose() {
-    _menuScrollController.dispose();
-    super.dispose();
-  }
+  int get bagIndex => categories.indexWhere((c) => c['name'] == 'Багц');
 
-  // --- utility: returns an Image widget that supports asset or network paths ---
+  // ---------------- IMAGE ----------------
   Widget _imageFor(String path, {double? width, double? height, BoxFit fit = BoxFit.cover}) {
     if (path.startsWith('http')) {
       return Image.network(path, width: width, height: height, fit: fit);
@@ -121,166 +83,243 @@ class _RestaurantPageState extends State<RestaurantPage> {
     }
   }
 
-  void _showFoodDetail(BuildContext context, Map<String, dynamic> item) {
+  // ---------------- ITEM DETAILS ----------------
+  void _showItemDetails(Map<String, dynamic> item) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
       builder: (context) {
-        return FractionallySizedBox(
-          heightFactor: 0.65,
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 6),
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 12,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
+          child: SingleChildScrollView(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(4)),
                 ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: _imageFor(
-                              item['img'],
-                              width: double.infinity,
-                              height: 180,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  item['title'],
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                item['price'],
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(item['subtitle'] ?? '', style: const TextStyle(color: Colors.grey)),
-                          const SizedBox(height: 14),
-                          const Text('Дэлгэрэнгүй мэдээлэл', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Энэхүү багц нь шинэхэн орцтой, халуун, амттай пиццануудыг багтаасан. Найзууд болон гэр бүлд тохиромжтой. Тослог багатай сонголт, нэмэлт орц залгах боломжтой.',
-                            style: TextStyle(height: 1.5),
-                          ),
-                          const SizedBox(height: 18),
-                          Row(
-                            children: [
-                              _QuantitySelector(),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  icon: const Icon(Icons.add_shopping_cart),
-                                  label: const Text('Сагсанд нэмэх'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color.fromARGB(255, 255, 123, 0),
-                                  ),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('${item['title']} сагсанд нэмлээ')),
-                                    );
-                                  },
-                                ),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          const Text('Хэмжээ, орц өөрчлөхийг хүсвэл сэтгэгдэл бичнэ үү.', style: TextStyle(color: Colors.grey, fontSize: 12))
-                        ],
-                      ),
-                    ),
-                  ),
-                )
-              ],
-            ),
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: _imageFor(item['img'], width: double.infinity, height: 180, fit: BoxFit.cover),
+              ),
+              const SizedBox(height: 12),
+              Text(item['title'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 6),
+              Text(item['subtitle'], style: const TextStyle(color: Colors.grey)),
+              const SizedBox(height: 12),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(item['price'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color.fromARGB(255, 255, 123, 0)),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${item['title']} сагсанд нэмэгдлээ')),
+                    );
+                  },
+                  child: const Text('Сагсанд нэмэх'),
+                ),
+              ]),
+              const SizedBox(height: 16),
+            ]),
           ),
         );
       },
     );
   }
 
+  // ---------------- CREATE BAG ----------------
+  void _showCreateBagDialog() {
+    Map<String, dynamic>? selectedPizza;
+    Map<String, dynamic>? selectedDrink;
+    int pizzaQty = 1;
+    int drinkQty = 1;
+
+    _bagNameCtrl.clear();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setLocal) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 12,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: SingleChildScrollView(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Center(child: Text('Багц үүсгэх', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                const SizedBox(height: 12),
+
+                const Text('Багцын нэр'),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _bagNameCtrl,
+                  decoration: const InputDecoration(hintText: 'Жишээ: Мини Багц', border: OutlineInputBorder()),
+                ),
+
+                const SizedBox(height: 14),
+                const Text('Пицца сонгох'),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  children: pizzas.map((p) {
+                    final sel = selectedPizza == p;
+                    return ChoiceChip(
+                      label: Text(p['title']),
+                      selected: sel,
+                      onSelected: (_) => setLocal(() => selectedPizza = p),
+                      selectedColor: const Color.fromARGB(255, 255, 123, 0),
+                      labelStyle: TextStyle(color: sel ? Colors.white : Colors.black),
+                    );
+                  }).toList(),
+                ),
+
+                if (selectedPizza != null) ...[
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    const Text('Пиццаны тоо: '),
+                    IconButton(
+                      onPressed: () {
+                        if (pizzaQty > 1) setLocal(() => pizzaQty--);
+                      },
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
+                    Text('$pizzaQty', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    IconButton(
+                      onPressed: () => setLocal(() => pizzaQty++),
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ]),
+                ],
+
+                const SizedBox(height: 14),
+                const Text('Ундаа сонгох'),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  children: drinks.map((d) {
+                    final sel = selectedDrink == d;
+                    return ChoiceChip(
+                      label: Text(d['title']),
+                      selected: sel,
+                      onSelected: (_) => setLocal(() => selectedDrink = d),
+                      selectedColor: const Color.fromARGB(255, 255, 123, 0),
+                      labelStyle: TextStyle(color: sel ? Colors.white : Colors.black),
+                    );
+                  }).toList(),
+                ),
+
+                if (selectedDrink != null) ...[
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    const Text('Ундааны тоо: '),
+                    IconButton(
+                      onPressed: () {
+                        if (drinkQty > 1) setLocal(() => drinkQty--);
+                      },
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
+                    Text('$drinkQty', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    IconButton(
+                      onPressed: () => setLocal(() => drinkQty++),
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ]),
+                ],
+
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color.fromARGB(255, 255, 123, 0)),
+                    onPressed: (_bagNameCtrl.text.isNotEmpty && selectedPizza != null && selectedDrink != null)
+                        ? () {
+                            final newPack = {
+                              'title': _bagNameCtrl.text,
+                              'subtitle':
+                                  '${selectedPizza!['title']} x$pizzaQty  +  ${selectedDrink!['title']} x$drinkQty',
+                              'price': '---',
+                              'img': selectedPizza!['img'],
+                            };
+
+                            setState(() {
+                              categories[bagIndex]['items'].add(newPack);
+                              selectedCategoryIndex = bagIndex;
+                            });
+
+                            Navigator.pop(context);
+                          }
+                        : null,
+                    child: const Text('Багц нэмэх'),
+                  ),
+                ),
+              ]),
+            ),
+          );
+        });
+      },
+    );
+  }
+
+  // ---------------- HEADER ----------------
   Widget _buildHeader() {
     return SliverAppBar(
       expandedHeight: 180,
       backgroundColor: Colors.white,
       flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            _imageFor('assets/images/pizzahutbanner.jpg', fit: BoxFit.cover),
-            Container(color: Colors.black.withOpacity(0.18)),
-            const Positioned(
-              left: 16,
-              bottom: 16,
-              child: Text(
-                'FEED\nGOOD\nTIMES',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  height: 0.95,
-                ),
-              ),
+        background: Stack(fit: StackFit.expand, children: [
+          _imageFor('assets/images/pizzahutbanner.jpg', fit: BoxFit.cover),
+          Container(color: Colors.black.withOpacity(0.18)),
+          const Positioned(
+            left: 16,
+            bottom: 16,
+            child: Text(
+              'FEED\nGOOD\nTIMES',
+              style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, height: 0.95),
             ),
-          ],
-        ),
+          ),
+        ]),
       ),
     );
   }
 
+  // ---------------- REST INFO ----------------
   Widget _buildRestaurantInfo() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const CircleAvatar(
-            radius: 36,
-            backgroundImage: AssetImage('assets/images/pizzahutlogo.png'),
-          ),
+          const CircleAvatar(radius: 36, backgroundImage: AssetImage('assets/images/pizzahutlogo.png')),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 const Expanded(
-                  child: Text('Pizza Hut / 3-р хороолол', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  child: Text('Pizza Hut / 3-р хороолол',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: const Color.fromARGB(255, 255, 123, 0), borderRadius: BorderRadius.circular(12)),
-                  child: const Row(children: [Icon(Icons.star, color: Colors.white, size: 14), SizedBox(width: 4), Text('5', style: TextStyle(color: Colors.white))]),
+                  decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 255, 123, 0), borderRadius: BorderRadius.circular(12)),
+                  child: const Row(children: [
+                    Icon(Icons.star, color: Colors.white, size: 14),
+                    SizedBox(width: 4),
+                    Text('5', style: TextStyle(color: Colors.white))
+                  ]),
                 )
               ]),
               const SizedBox(height: 6),
@@ -298,36 +337,45 @@ class _RestaurantPageState extends State<RestaurantPage> {
         ]),
         const SizedBox(height: 12),
         Container(
-          decoration: BoxDecoration(color: const Color.fromARGB(255, 255, 123, 0), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 255, 123, 0),
+            borderRadius: BorderRadius.circular(8),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.store, color: Colors.white, size: 18),
-            const SizedBox(width: 8),
-            const Text('Pizza Hut / 3-р Хороолол', style: TextStyle(color: Colors.white)),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(6)),
-              child: const Text('12:00 - 22:30', style: TextStyle(color: Colors.white, fontSize: 12)),
-            )
-          ]),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.store, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              const Text('Pizza Hut / 3-р Хороолол', style: TextStyle(color: Colors.white)),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('12:00 - 22:30', style: TextStyle(color: Colors.white, fontSize: 12)),
+              )
+            ],
+          ),
         ),
       ]),
     );
   }
 
+  // ---------------- UI ----------------
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(children: [
-        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        const SizedBox(width: 10),
-        const Expanded(child: Divider(thickness: 2)),
+      child: Row(children: const [
+        Text('Food', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        SizedBox(width: 10),
+        Expanded(child: Divider(thickness: 2)),
       ]),
     );
   }
 
-  // ---------------- CATEGORY CHIPS ----------------
   Widget _buildCategoryChips() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -342,15 +390,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
             return ChoiceChip(
               label: Text(name),
               selected: selectedCategoryIndex == idx,
-              onSelected: (sel) {
-                if (sel) {
-                  setState(() {
-                    selectedCategoryIndex = idx;
-                    // reset horizontal menu scroll so user starts from left
-                    _menuScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                  });
-                }
-              },
+              onSelected: (sel) => setState(() => selectedCategoryIndex = idx),
               selectedColor: const Color.fromARGB(255, 255, 123, 0),
               labelStyle: TextStyle(color: selectedCategoryIndex == idx ? Colors.white : Colors.black),
             );
@@ -360,41 +400,9 @@ class _RestaurantPageState extends State<RestaurantPage> {
     );
   }
 
-  Widget _buildHorizontalMenu() {
-    return SizedBox(
-      height: 160,
-      child: Stack(
-        children: [
-          ListView.separated(
-            controller: _menuScrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            scrollDirection: Axis.horizontal,
-            itemCount: filteredItems.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              return _buildMenuCard(filteredItems[index]);
-            },
-          ),
-          Positioned(left: 6, top: 55, child: _arrow(Icons.chevron_left, _scrollLeft)),
-          Positioned(right: 6, top: 55, child: _arrow(Icons.chevron_right, _scrollRight)),
-        ],
-      ),
-    );
-  }
-
-  Widget _arrow(IconData icon, VoidCallback onTap) {
-    return Material(
-      color: Colors.white,
-      shape: const CircleBorder(),
-      elevation: 3,
-      child: IconButton(icon: Icon(icon, size: 28), onPressed: onTap),
-    );
-  }
-
   Widget _buildMenuCard(Map<String, dynamic> item) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () => _showFoodDetail(context, item),
+    return GestureDetector(
+      onTap: () => _showItemDetails(item),
       child: Container(
         width: 220,
         decoration: BoxDecoration(
@@ -407,18 +415,37 @@ class _RestaurantPageState extends State<RestaurantPage> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: _imageFor(item['img'], height: 95, width: double.infinity, fit: BoxFit.cover),
           ),
-          Padding(padding: const EdgeInsets.all(8), child: Text(item['title'], style: const TextStyle(fontWeight: FontWeight.bold))),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(item['title'], style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
         ]),
       ),
     );
   }
 
-  Widget _buildMenuListTile(BuildContext context, Map<String, dynamic> item) {
+  Widget _buildHorizontalMenu() {
+    return SizedBox(
+      height: 160,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: filteredItems.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) => _buildMenuCard(filteredItems[index]),
+      ),
+    );
+  }
+
+  Widget _buildMenuListTile(Map<String, dynamic> item) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        onTap: () => _showFoodDetail(context, item),
-        leading: ClipRRect(borderRadius: BorderRadius.circular(6), child: _imageFor(item['img'], width: 60, height: 60, fit: BoxFit.cover)),
+        onTap: () => _showItemDetails(item),
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: _imageFor(item['img'], width: 60, height: 60, fit: BoxFit.cover),
+        ),
         title: Text(item['title']),
         subtitle: Text(item['subtitle']),
         trailing: Text(item['price']),
@@ -429,6 +456,12 @@ class _RestaurantPageState extends State<RestaurantPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color.fromARGB(255, 255, 123, 0),
+        onPressed: _showCreateBagDialog,
+        icon: const Icon(Icons.fastfood),
+        label: const Text('Багц нэмэх'),
+      ),
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -436,10 +469,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
             SliverToBoxAdapter(child: _buildRestaurantInfo()),
             const SliverToBoxAdapter(child: SizedBox(height: 8)),
-
-            // category chips
             SliverToBoxAdapter(child: _buildCategoryChips()),
-
             const SliverToBoxAdapter(child: SizedBox(height: 6)),
             SliverToBoxAdapter(child: _buildSectionTitle('Food')),
             const SliverToBoxAdapter(child: SizedBox(height: 8)),
@@ -449,42 +479,14 @@ class _RestaurantPageState extends State<RestaurantPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return _buildMenuListTile(context, filteredItems[index]);
-                  },
+                  (context, index) => _buildMenuListTile(filteredItems[index]),
                   childCount: filteredItems.length,
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            const SliverToBoxAdapter(child: SizedBox(height: 80)),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// small quantity selector widget used inside the popup
-class _QuantitySelector extends StatefulWidget {
-  @override
-  State<_QuantitySelector> createState() => _QuantitySelectorState();
-}
-
-class _QuantitySelectorState extends State<_QuantitySelector> {
-  int qty = 1;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.remove), onPressed: qty > 1 ? () => setState(() => qty--) : null),
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Text(qty.toString(), style: const TextStyle(fontSize: 16))),
-          IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: const Icon(Icons.add), onPressed: () => setState(() => qty++)),
-        ],
       ),
     );
   }
