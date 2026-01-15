@@ -263,7 +263,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
                             Navigator.pop(context);
                           }
                         : null,
-                    child: const Text('Багц нэмэх'),
+                    child: const Text('Багц үүсгэх'),
                   ),
                 ),
               ]),
